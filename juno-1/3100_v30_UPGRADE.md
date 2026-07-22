@@ -37,17 +37,6 @@ The same `v30.0.0` commit successfully upgraded `uni-7` under plan `v30` at heig
 - [x] A clean source build from tag `v30.0.0` was independently reproduced with Go `1.25.2` and reported the expected release commit and dependency versions.
 - [x] Mainnet has no scheduled upgrade plan; the gov authority/parameters match the payload; two providers report consensus `block.max_gas = 100000000`; all 674 IBC channels were enumerated with no `icqhost` port or `icq-*` channel.
 
-## Remaining launch checks
-
-Before broadcast and halt coordination:
-
-- [ ] Confirm more than 67% bonded voting power has built and staged tag `v30.0.0` at the exact release commit under plan directory `v30`, has the `0.075ujuno` fee-floor configuration, and is staffed for the halt.
-- [ ] Confirm a recent usable snapshot/backup, the incident channel/owner, and the old v29 binary are available. Validators must preserve their newest signing state; no independent rollback.
-
-Immediately before signing, refresh the read-only plan, gov authority/parameters, consensus `block.max_gas`, and async-ICQ queries above. This is a quick stale-state check, not another rehearsal or readiness program.
-
-Proposal packaging is mechanical rather than an operational gate. After this runbook merges upstream, construct the unsigned proposal using the immutable `CosmosContracts/mainnet` merge-commit URL and corresponding SHA-256. The final payload must pass unsigned generate/decode/hash inspection. Signing and broadcast remain separately authorized ceremonies.
-
 ## Build v30 from source
 
 Use Go `1.25.2`, matching the tagged release build configuration. Build as the same OS user that runs `junod`, from a clean checkout of the release tag, as in previous Juno upgrades:
@@ -108,8 +97,8 @@ sha256sum "$HOME/juno-v30/junod"
 
    The response must name `v30` and show the approved mainnet height. If it does not, stop.
 
-2. Confirm the existing v29 node is healthy, synced, and signing normally.
-3. Preserve the current v29 binary and record its checksum/version.
+2. Confirm the existing node is healthy, synced, and signing normally.
+3. Preserve the current binary and record its checksum/version.
 4. Complete the published snapshot/restore procedure. Handle `priv_validator_state.json` separately and never restore stale signing state onto a validator that may have signed later heights.
 5. Set `minimum-gas-prices = "0.075ujuno"` in `app.toml`, or leave it empty so the on-chain fee market sets the floor. Do not retain a lower non-empty value.
 6. Capture consensus `block.max_gas` from two providers at the same height; this is the expected post-upgrade fee-market maximum utilization. The value currently observed is `100000000`, but it is not an invariant.
@@ -225,19 +214,6 @@ curl -fsS "$REST/juno/votingsnapshot/v1/params" | jq
 curl -fsS "$REST/juno/votingsnapshot/v1/voting_power/$DELEGATOR/$UPGRADE_HEIGHT" | jq
 curl -fsS "$REST/juno/votingsnapshot/v1/total_voting_power/$UPGRADE_HEIGHT" | jq
 ```
-
-Acceptance criteria:
-
-- plan `v30` is applied at the approved height and blocks continue;
-- independent providers agree on height and app hash;
-- post-upgrade commit signatures represent at least 67% bonded voting power;
-- fee market is enabled for `ujuno`, minimum base gas price is `0.075`, and maximum block utilization equals the pre-halt consensus `block.max_gas` captured from two providers (`100000000` when this draft was written);
-- cw-hooks failure-removal threshold is `3`;
-- module versions include `cw-hooks=2`, `ibc=8`, `transfer=6`, `feemarket=1`, `votingsnapshot=1`, and `stream=1`. Historical version-map entries for deleted modules do not prove their KV stores still exist;
-- voting-snapshot returns sensible backfilled power for an existing delegator and total power;
-- existing DAO DAO and CosmWasm contracts can be queried and safely exercised;
-- controlled bank, staking, governance, tokenfactory, IBC, PFM, and ibc-hooks transactions succeed with the v30 client;
-- no store-loader, migration, wasmvm ABI, app-hash, or consensus errors appear.
 
 ## Failure policy
 
