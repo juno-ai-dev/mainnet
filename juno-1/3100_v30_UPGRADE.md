@@ -1,6 +1,6 @@
 # Juno v30 mainnet upgrade — DRAFT
 
-> **Status:** proposed target. The intended halt is block `40420000`; it becomes authoritative only after an on-chain software-upgrade proposal passes and `junod query upgrade plan` reports plan `v30` at that height.
+> **Status:** proposed target. The intended halt is block `40420069`; it becomes authoritative only after an on-chain software-upgrade proposal passes and `junod query upgrade plan` reports plan `v30` at that height.
 
 This package prepares Juno mainnet to upgrade from v29 to [`v30.0.0`](https://github.com/CosmosContracts/juno/releases/tag/v30.0.0), the source release already exercised on `uni-7`.
 
@@ -10,8 +10,8 @@ This package prepares Juno mainnet to upgrade from v29 to [`v30.0.0`](https://gi
 | Current versions observed | `v29.0.0` and `v29.1.0` |
 | Target version | `v30.0.0` |
 | Upgrade plan name | **`v30`** |
-| Upgrade height | **`40420000`** |
-| Approximate UTC halt | **2026-08-03 15:30 UTC — height is authoritative** |
+| Upgrade height | **`40420069`** |
+| Approximate UTC halt | **2026-08-03 15:33 UTC — height is authoritative** |
 | Release commit | `c0b3a8d258d52d16e5bc39a75168a99aab9d098e` |
 | OCI image | `ghcr.io/cosmoscontracts/juno@sha256:081346b118fd327afb6f688ae6d6c6a430a8ff6260d9cd56e0db06630560c4db` |
 | Release manifest | [`v30/release-manifest.json`](v30/release-manifest.json) |
@@ -37,7 +37,7 @@ The same `v30.0.0` commit successfully upgraded `uni-7` under plan `v30` at heig
 - [x] `uni-7` successfully halted and resumed under plan `v30` at height `16034000` on the same release commit.
 - [x] Live post-upgrade checks confirmed continued blocks, fee-market state, cw-hooks parameters, voting-snapshot backfill/queries, module versions, and existing IBC channels.
 - [x] The amd64 and arm64 OCI binaries, static linkage, index/platform/layer digests, and binary SHA-256 values were independently verified; repeated release workflow builds produced the same binary hashes.
-- [x] Mainnet currently has no scheduled upgrade plan, and the async-ICQ precondition was checked.
+- [x] Mainnet has no scheduled upgrade plan; the gov authority/parameters match the payload; two providers report consensus `block.max_gas = 100000000`; all 674 IBC channels were enumerated with no `icqhost` port or `icq-*` channel.
 
 ## Remaining launch checks
 
@@ -45,8 +45,10 @@ Before broadcast and halt coordination:
 
 - [ ] Confirm more than 67% bonded voting power has the exact checksum staged under plan directory `v30`, has the `0.075ujuno` fee-floor configuration, and is staffed for the halt.
 - [ ] Confirm a recent usable snapshot/backup, the incident channel/owner, and the old v29 binary are available. Validators must preserve their newest signing state; no independent rollback.
-- [ ] Re-query `juno-1` for no conflicting upgrade plan, the gov authority/parameters, current consensus `block.max_gas`, and no newly active async-ICQ channel.
-- [ ] Render the proposal with a commit-pinned runbook URL and SHA-256, reject every unresolved placeholder, generate/decode/hash the unsigned transaction, and inspect it. Signing and broadcast are separately authorized ceremonies.
+
+Immediately before signing, refresh the read-only plan, gov authority/parameters, consensus `block.max_gas`, and async-ICQ queries above. This is a quick stale-state check, not another rehearsal or readiness program.
+
+Proposal packaging is mechanical rather than an operational gate: the final payload must use this commit-pinned runbook and SHA-256, contain no placeholders, and pass unsigned generate/decode/hash inspection. Signing and broadcast remain separately authorized ceremonies.
 
 ## Install the pinned candidate binary
 
