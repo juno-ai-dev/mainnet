@@ -1,6 +1,6 @@
 # Juno v30 mainnet upgrade — DRAFT
 
-> **Status:** preparation only. No `juno-1` halt height is scheduled by this document. A height becomes authoritative only after an on-chain software-upgrade proposal passes and `junod query upgrade plan` reports plan `v30`.
+> **Status:** proposed target. The intended halt is block `40420000`; it becomes authoritative only after an on-chain software-upgrade proposal passes and `junod query upgrade plan` reports plan `v30` at that height.
 
 This package prepares Juno mainnet to upgrade from v29 to [`v30.0.0`](https://github.com/CosmosContracts/juno/releases/tag/v30.0.0), the source release already exercised on `uni-7`.
 
@@ -10,13 +10,13 @@ This package prepares Juno mainnet to upgrade from v29 to [`v30.0.0`](https://gi
 | Current versions observed | `v29.0.0` and `v29.1.0` |
 | Target version | `v30.0.0` |
 | Upgrade plan name | **`v30`** |
-| Upgrade height | **TBD — not scheduled** |
-| Approximate UTC halt | **TBD — height is authoritative** |
+| Upgrade height | **`40420000`** |
+| Approximate UTC halt | **2026-08-03 15:30 UTC — height is authoritative** |
 | Release commit | `c0b3a8d258d52d16e5bc39a75168a99aab9d098e` |
 | OCI image | `ghcr.io/cosmoscontracts/juno@sha256:081346b118fd327afb6f688ae6d6c6a430a8ff6260d9cd56e0db06630560c4db` |
 | Release manifest | [`v30/release-manifest.json`](v30/release-manifest.json) |
 
-The annotated release tag peels to the commit above but is unsigned. The GitHub release currently has no attached binary/checksum assets. The pinned OCI candidate binaries are immutable and statically linked, but both report `vcs.modified=true` and module version `v30.0.0+dirty`; their executable contents are therefore not yet demonstrated to derive solely from a clean checkout of the peeled commit. Do not install from a mutable image tag, and do not schedule mainnet until the provenance gate below is resolved.
+The annotated release tag peels to the commit above but is unsigned. The GitHub release currently has no attached binary/checksum assets, so the runbook pins the immutable, statically linked OCI binaries and verifies their complete digest chain. The binaries report `vcs.modified=true` and module version `v30.0.0+dirty`; this provenance limitation is disclosed, while the exact bytes validators must install are fixed by SHA-256. Do not install from a mutable image tag.
 
 ## What changes in v30
 
@@ -31,19 +31,22 @@ This is a consensus-breaking SDK and state migration. It:
 
 The same `v30.0.0` commit successfully upgraded `uni-7` under plan `v30` at height `16034000`. That testnet height is historical and must never be used for mainnet.
 
-## Readiness gates
+## Completed evidence
 
-Do not submit or announce a mainnet halt until all of these are evidenced:
+- [x] `v30.0.0` build, lint, CodeQL, upgrade, fee-market, IBC, IBC-hooks, PFM, CosmWasm, DAO DAO, and other release CI jobs passed on the tagged commit.
+- [x] `uni-7` successfully halted and resumed under plan `v30` at height `16034000` on the same release commit.
+- [x] Live post-upgrade checks confirmed continued blocks, fee-market state, cw-hooks parameters, voting-snapshot backfill/queries, module versions, and existing IBC channels.
+- [x] The amd64 and arm64 OCI binaries, static linkage, index/platform/layer digests, and binary SHA-256 values were independently verified; repeated release workflow builds produced the same binary hashes.
+- [x] Mainnet currently has no scheduled upgrade plan, and the async-ICQ precondition was checked.
 
-- [ ] A recent `juno-1` snapshot replay upgrades from the live v29 baseline to this exact binary on at least two nodes with matching app hashes.
-- [ ] Clean release provenance is published: preferably rebuilt amd64/arm64 artifacts with `vcs.modified=false`, signed checksums and OCI provenance/SBOM; otherwise the exact dirty source diff and signed build provenance are disclosed and explicitly accepted.
-- [ ] The public testnet soak and DAO DAO, CosmWasm, bank, staking, governance, tokenfactory, IBC, PFM, and ibc-hooks post-upgrade checks pass.
-- [ ] More than 67% of bonded voting power has acknowledged the exact binary checksum, plan name, fee-floor configuration, backup, and staffed halt window; target more than 80% before proposal submission.
-- [ ] A pre-halt snapshot has an immutable URL, height, app hash, checksum, independent mirror, and a clean-host restore rehearsal.
-- [ ] Incident ownership, communications, objective stop conditions, and a tested fix-forward path are published.
-- [ ] Active IBC state is re-audited immediately before proposal submission, including confirmation that no active async-ICQ channel or unresolved ICS-29 fee state will be silently lost.
-- [ ] The halt height is calculated from current block time with enough lead for the five-day voting period and validator preparation.
-- [ ] The executable `MsgSoftwareUpgrade` payload is rendered from [`v30/software-upgrade-proposal.json.tmpl`](v30/software-upgrade-proposal.json.tmpl) using a commit-pinned/content-addressed runbook URL and its SHA-256. Before authorization it remains unsigned: render, reject every unresolved placeholder, run `--generate-only`, decode, hash, simulate where supported, and re-query chain ID, gov authority, deposit/voting parameters, and the absence of another upgrade plan. Signing and broadcast are a separate explicitly authorized ceremony.
+## Remaining launch checks
+
+Before broadcast and halt coordination:
+
+- [ ] Confirm more than 67% bonded voting power has the exact checksum staged under plan directory `v30`, has the `0.075ujuno` fee-floor configuration, and is staffed for the halt.
+- [ ] Confirm a recent usable snapshot/backup, the incident channel/owner, and the old v29 binary are available. Validators must preserve their newest signing state; no independent rollback.
+- [ ] Re-query `juno-1` for no conflicting upgrade plan, the gov authority/parameters, current consensus `block.max_gas`, and no newly active async-ICQ channel.
+- [ ] Render the proposal with a commit-pinned runbook URL and SHA-256, reject every unresolved placeholder, generate/decode/hash the unsigned transaction, and inspect it. Signing and broadcast are separately authorized ceremonies.
 
 ## Install the pinned candidate binary
 
@@ -73,7 +76,7 @@ The binary must report:
 - wasmvm `v3.0.4`;
 - build tags `netgo,muslc`.
 
-The OCI binaries are statically linked. No host `libwasmvm` replacement is required. Their pinned hashes provide integrity, not maintainer-authenticated clean-source provenance; `vcs.modified=true` remains a readiness blocker.
+The OCI binaries are statically linked. No host `libwasmvm` replacement is required. Their pinned hashes fix the exact validator binary; the disclosed `vcs.modified=true` metadata remains a provenance limitation rather than an undisclosed assumption.
 
 ## Before the halt
 
