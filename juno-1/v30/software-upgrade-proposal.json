@@ -1,0 +1,19 @@
+{
+  "messages": [
+    {
+      "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+      "authority": "juno10d07y265gmmuvt4z0w9aw880jnsr700jvss730",
+      "plan": {
+        "name": "v30",
+        "time": "0001-01-01T00:00:00Z",
+        "height": "40420000",
+        "info": "{\"release\":\"https://github.com/CosmosContracts/juno/releases/tag/v30.0.0\",\"commit\":\"c0b3a8d258d52d16e5bc39a75168a99aab9d098e\",\"oci\":\"ghcr.io/cosmoscontracts/juno@sha256:081346b118fd327afb6f688ae6d6c6a430a8ff6260d9cd56e0db06630560c4db\",\"upgrade_instructions\":\"https://github.com/juno-ai-dev/mainnet/blob/b6ed7c31545625dad9cbcde7d1f3a77f8f87176b/juno-1/3100_v30_UPGRADE.md\",\"upgrade_instructions_sha256\":\"cb4550ced2aa6edfff82968db008f9fd5df8bc282f1782144584ba879dfa3f5e\"}"
+      }
+    }
+  ],
+  "metadata": "https://github.com/juno-ai-dev/mainnet/blob/b6ed7c31545625dad9cbcde7d1f3a77f8f87176b/juno-1/3100_v30_UPGRADE.md",
+  "deposit": "5000000000ujuno",
+  "title": "Juno v30 software upgrade",
+  "summary": "Upgrade juno-1 from v29 to v30.0.0 at height 40420000 using plan v30 and release commit c0b3a8d258d52d16e5bc39a75168a99aab9d098e. The migration adds feemarket and votingsnapshot, removes globalfee, crisis, params, nft, feeibc, and interchainquery stores, backfills voting snapshots, enables the ujuno fee market, and updates cw-hooks parameters. The height is authoritative; estimated halt time is 2026-08-03 15:30 UTC. Commit-pinned operator instructions and checksums: https://github.com/juno-ai-dev/mainnet/blob/b6ed7c31545625dad9cbcde7d1f3a77f8f87176b/juno-1/3100_v30_UPGRADE.md (SHA-256 cb4550ced2aa6edfff82968db008f9fd5df8bc282f1782144584ba879dfa3f5e)",
+  "expedited": false
+}
