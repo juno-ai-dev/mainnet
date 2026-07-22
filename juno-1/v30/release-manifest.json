@@ -1,12 +1,14 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "release": {
     "version": "v30.0.0",
     "plan_name": "v30",
     "source_repository": "https://github.com/CosmosContracts/juno",
     "tag_object": "1b905982097260c06576ae0e14c654b2c32a9037",
+    "tag_signature": "unsigned",
     "peeled_commit": "c0b3a8d258d52d16e5bc39a75168a99aab9d098e",
-    "release_url": "https://github.com/CosmosContracts/juno/releases/tag/v30.0.0"
+    "release_url": "https://github.com/CosmosContracts/juno/releases/tag/v30.0.0",
+    "github_release_assets_present": false
   },
   "oci": {
     "repository": "ghcr.io/cosmoscontracts/juno",
@@ -27,7 +29,7 @@
     }
   },
   "expected_metadata": {
-    "commit": "c0b3a8d258d52d16e5bc39a75168a99aab9d098e",
+    "commit_field": "c0b3a8d258d52d16e5bc39a75168a99aab9d098e",
     "go": "1.25.2",
     "cosmos_sdk": "v0.53.7",
     "cometbft": "v0.38.23",
@@ -36,6 +38,10 @@
       "netgo",
       "muslc"
     ],
-    "static": true
+    "static": true,
+    "go_module_version": "v30.0.0+dirty",
+    "vcs_revision": "c0b3a8d258d52d16e5bc39a75168a99aab9d098e",
+    "vcs_modified": true,
+    "clean_source_provenance_demonstrated": false
   }
 }

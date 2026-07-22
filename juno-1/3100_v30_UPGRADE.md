@@ -2,7 +2,7 @@
 
 > **Status:** preparation only. No `juno-1` halt height is scheduled by this document. A height becomes authoritative only after an on-chain software-upgrade proposal passes and `junod query upgrade plan` reports plan `v30`.
 
-Juno mainnet will upgrade from v29 to [`v30.0.0`](https://github.com/CosmosContracts/juno/releases/tag/v30.0.0), using the exact release already applied on `uni-7`.
+This package prepares Juno mainnet to upgrade from v29 to [`v30.0.0`](https://github.com/CosmosContracts/juno/releases/tag/v30.0.0), the source release already exercised on `uni-7`.
 
 | Item | Value |
 |---|---|
@@ -16,7 +16,7 @@ Juno mainnet will upgrade from v29 to [`v30.0.0`](https://github.com/CosmosContr
 | OCI image | `ghcr.io/cosmoscontracts/juno@sha256:081346b118fd327afb6f688ae6d6c6a430a8ff6260d9cd56e0db06630560c4db` |
 | Release manifest | [`v30/release-manifest.json`](v30/release-manifest.json) |
 
-The release tag is annotated and peels to the commit above. The GitHub release currently has no attached binary/checksum assets, so these instructions use the same statically linked binaries already published inside the immutable multi-architecture OCI image. Do not install from a mutable image tag.
+The annotated release tag peels to the commit above but is unsigned. The GitHub release currently has no attached binary/checksum assets. The pinned OCI candidate binaries are immutable and statically linked, but both report `vcs.modified=true` and module version `v30.0.0+dirty`; their executable contents are therefore not yet demonstrated to derive solely from a clean checkout of the peeled commit. Do not install from a mutable image tag, and do not schedule mainnet until the provenance gate below is resolved.
 
 ## What changes in v30
 
@@ -36,17 +36,18 @@ The same `v30.0.0` commit successfully upgraded `uni-7` under plan `v30` at heig
 Do not submit or announce a mainnet halt until all of these are evidenced:
 
 - [ ] A recent `juno-1` snapshot replay upgrades from the live v29 baseline to this exact binary on at least two nodes with matching app hashes.
+- [ ] Clean release provenance is published: preferably rebuilt amd64/arm64 artifacts with `vcs.modified=false`, signed checksums and OCI provenance/SBOM; otherwise the exact dirty source diff and signed build provenance are disclosed and explicitly accepted.
 - [ ] The public testnet soak and DAO DAO, CosmWasm, bank, staking, governance, tokenfactory, IBC, PFM, and ibc-hooks post-upgrade checks pass.
 - [ ] More than 67% of bonded voting power has acknowledged the exact binary checksum, plan name, fee-floor configuration, backup, and staffed halt window; target more than 80% before proposal submission.
 - [ ] A pre-halt snapshot has an immutable URL, height, app hash, checksum, independent mirror, and a clean-host restore rehearsal.
 - [ ] Incident ownership, communications, objective stop conditions, and a tested fix-forward path are published.
 - [ ] Active IBC state is re-audited immediately before proposal submission, including confirmation that no active async-ICQ channel or unresolved ICS-29 fee state will be silently lost.
 - [ ] The halt height is calculated from current block time with enough lead for the five-day voting period and validator preparation.
-- [ ] The executable `MsgSoftwareUpgrade` payload is rendered from [`v30/software-upgrade-proposal.json.tmpl`](v30/software-upgrade-proposal.json.tmpl), inspected, signed to a temporary file, simulated, and re-queried without broadcasting before authorization.
+- [ ] The executable `MsgSoftwareUpgrade` payload is rendered from [`v30/software-upgrade-proposal.json.tmpl`](v30/software-upgrade-proposal.json.tmpl) using a commit-pinned/content-addressed runbook URL and its SHA-256. Before authorization it remains unsigned: render, reject every unresolved placeholder, run `--generate-only`, decode, hash, simulate where supported, and re-query chain ID, gov authority, deposit/voting parameters, and the absence of another upgrade plan. Signing and broadcast are a separate explicitly authorized ceremony.
 
-## Install the exact release binary
+## Install the pinned candidate binary
 
-Required tools: `curl`, `jq`, `tar`, and `sha256sum`. The downloader selects linux/amd64 or linux/arm64 from the host architecture, fetches the exact OCI layer by digest, and verifies both layer and binary hashes from the release manifest.
+Required tools: `curl`, `jq`, `tar`, and `sha256sum`. The downloader requires Linux, reads one canonical release manifest, verifies the OCI index and selected platform manifest by digest, proves that the manifest references the binary layer, then verifies the layer, binary, and embedded metadata before atomically installing to a new destination.
 
 ```bash
 cd juno-1/v30
@@ -72,7 +73,7 @@ The binary must report:
 - wasmvm `v3.0.4`;
 - build tags `netgo,muslc`.
 
-The OCI binaries are statically linked. No host `libwasmvm` replacement is required.
+The OCI binaries are statically linked. No host `libwasmvm` replacement is required. Their pinned hashes provide integrity, not maintainer-authenticated clean-source provenance; `vcs.modified=true` remains a readiness blocker.
 
 ## Before the halt
 
@@ -89,7 +90,8 @@ The OCI binaries are statically linked. No host `libwasmvm` replacement is requi
 3. Preserve the current v29 binary and record its checksum/version.
 4. Complete the published snapshot/restore procedure. Handle `priv_validator_state.json` separately and never restore stale signing state onto a validator that may have signed later heights.
 5. Set `minimum-gas-prices = "0.075ujuno"` in `app.toml`, or leave it empty so the on-chain fee market sets the floor. Do not retain a lower non-empty value.
-6. Stage v30 without replacing the running v29 binary.
+6. Capture consensus `block.max_gas` from two providers at the same height; this is the expected post-upgrade fee-market maximum utilization. The value currently observed is `100000000`, but it is not an invariant.
+7. Stage v30 without replacing the running v29 binary.
 
 ## Stage with Cosmovisor
 
@@ -107,21 +109,55 @@ sha256sum "$DAEMON_HOME/cosmovisor/upgrades/v30/bin/junod"
 
 Confirm the version, commit, and architecture-specific checksum above before the halt.
 
-## Manual upgrade
-
-If Cosmovisor is not used, wait for the approved halt. Do not replace the running binary early.
+Also inspect the actual service before relying on the staged binary:
 
 ```bash
-sudo systemctl stop junod
-install -m 0755 "$(command -v junod)" "$HOME/junod-v29-backup"
-install -m 0755 "$HOME/juno-v30/junod" "$HOME/go/bin/junod"
-"$HOME/go/bin/junod" version --long
-sha256sum "$HOME/go/bin/junod"
-sudo systemctl start junod
-journalctl -u junod -f --no-hostname
+sudo systemctl show junod -p User -p ExecStart -p Environment --no-pager
+sudo systemctl cat junod
 ```
 
-Adapt service user and paths to the operator's deployment.
+Confirm `ExecStart` uses Cosmovisor, `DAEMON_HOME` is the intended Juno home, `DAEMON_NAME=junod`, the staged directory is owned by the service user, and automatic binary download is disabled. At the scheduled halt, observe Cosmovisor perform the switch; do not manually replace or start a second `junod` process.
+
+## Manual upgrade
+
+If Cosmovisor is not used, inspect the service and record its exact user and executable before the halt:
+
+```bash
+sudo systemctl show junod -p User -p ExecStart --no-pager
+sudo systemctl cat junod
+```
+
+If `ExecStart` uses Cosmovisor, stop and use the Cosmovisor procedure instead. Otherwise set `ACTUAL_JUNOD` to the exact executable used by `ExecStart`; do not infer it from `command -v`, `$HOME`, or the interactive shell user. Preserve that exact v29 executable under a new, checksum-recorded backup path before the halt.
+
+At the approved scheduled halt only:
+
+```bash
+ACTUAL_JUNOD="<EXACT_EXECSTART_JUNOD_PATH>"
+V29_BACKUP="<NEW_NONEXISTENT_V29_BACKUP_PATH>"
+DAEMON_HOME="<EXACT_SERVICE_JUNO_HOME>"
+UPGRADE_HEIGHT="<APPROVED_MAINNET_HEIGHT>"
+
+test -x "$ACTUAL_JUNOD"
+test ! -e "$V29_BACKUP"
+sudo systemctl stop junod
+if sudo systemctl is-active --quiet junod; then
+  echo "junod did not stop" >&2
+  exit 1
+fi
+jq -e --arg height "$UPGRADE_HEIGHT" \
+  '.name == "v30" and (.height | tostring) == $height' \
+  "$DAEMON_HOME/data/upgrade-info.json" >/dev/null
+sudo install -m 0755 "$ACTUAL_JUNOD" "$V29_BACKUP"
+sha256sum "$V29_BACKUP"
+
+sudo install -m 0755 "$HOME/juno-v30/junod" "$ACTUAL_JUNOD.new"
+sha256sum "$ACTUAL_JUNOD.new"
+"$ACTUAL_JUNOD.new" version --long
+sudo mv "$ACTUAL_JUNOD.new" "$ACTUAL_JUNOD"
+sudo systemctl start junod
+sudo systemctl show junod -p ExecStart --no-pager
+journalctl -u junod -f --no-hostname
+```
 
 ## Halt execution
 
@@ -132,11 +168,11 @@ At T-60 minutes:
 - confirm snapshot checksums, two independent RPCs, and incident coordination;
 - pause nonessential relayers and transaction automation.
 
-At the halt:
+At the halt, use exactly one of the mutually exclusive Cosmovisor or manual procedures above:
 
 1. Confirm the v29 binary stopped because of the scheduled upgrade—not a consensus or infrastructure failure.
 2. Verify `$DAEMON_HOME/data/upgrade-info.json` contains plan name `v30` and the approved height.
-3. Start v30 and preserve migration logs.
+3. Let Cosmovisor perform its staged switch, or perform the verified manual replacement; never do both. Preserve migration logs.
 4. Watch for store-loader, voting-snapshot backfill, wasmvm, IBC, and fee-market errors.
 5. Never delete state or run `unsafe-reset-all` in response to a migration panic.
 6. Confirm at least 67% upgraded voting power and two post-upgrade blocks before resuming automation.
@@ -171,8 +207,9 @@ Acceptance criteria:
 - plan `v30` is applied at the approved height and blocks continue;
 - independent providers agree on height and app hash;
 - post-upgrade commit signatures represent at least 67% bonded voting power;
-- fee market is enabled for `ujuno`, minimum base gas price is `0.075`, and maximum block utilization is `100000000`;
+- fee market is enabled for `ujuno`, minimum base gas price is `0.075`, and maximum block utilization equals the pre-halt consensus `block.max_gas` captured from two providers (`100000000` when this draft was written);
 - cw-hooks failure-removal threshold is `3`;
+- module versions include `cw-hooks=2`, `ibc=8`, `transfer=6`, `feemarket=1`, `votingsnapshot=1`, and `stream=1`. Historical version-map entries for deleted modules do not prove their KV stores still exist;
 - voting-snapshot returns sensible backfilled power for an existing delegator and total power;
 - existing DAO DAO and CosmWasm contracts can be queried and safely exercised;
 - controlled bank, staking, governance, tokenfactory, IBC, PFM, and ibc-hooks transactions succeed with the v30 client;
@@ -180,6 +217,8 @@ Acceptance criteria:
 
 ## Failure policy
 
-Before the first post-upgrade block commits, preserve logs and coordinate either a corrected binary or the pre-agreed network-wide restore procedure.
+Block-commit status is not the double-sign safety boundary. A validator may already have emitted a proposal, prevote, or precommit at a height/round/step even when no block committed. Preserve logs and each validator's newest signing state before any recovery action.
 
-After any post-upgrade block commits, individual validators must not roll back independently. Coordinate a deterministic fix-forward release or an explicitly agreed network-wide recovery. Restoring stale validator signing state can cause double-signing.
+Never restore an older `priv_validator_state.json` with the same consensus key onto a validator that may have signed later state. Before a coordinated restore, stop and isolate the consensus key/HSM, collect each validator's highest signed height/round/step, define one network-wide recovery height and state, and document how signing state is preserved or advanced before any validator restarts. Individual rollback is forbidden both before and after the first post-upgrade commit.
+
+Prefer a deterministic fix-forward binary. Use network-wide restore only through the pre-agreed, rehearsed recovery procedure with an incident commander and explicit double-sign controls.
