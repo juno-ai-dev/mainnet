@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "release": {
+    "version": "v30.0.0",
+    "plan_name": "v30",
+    "source_repository": "https://github.com/CosmosContracts/juno",
+    "tag_object": "1b905982097260c06576ae0e14c654b2c32a9037",
+    "peeled_commit": "c0b3a8d258d52d16e5bc39a75168a99aab9d098e",
+    "release_url": "https://github.com/CosmosContracts/juno/releases/tag/v30.0.0"
+  },
+  "oci": {
+    "repository": "ghcr.io/cosmoscontracts/juno",
+    "index_digest": "sha256:081346b118fd327afb6f688ae6d6c6a430a8ff6260d9cd56e0db06630560c4db",
+    "platforms": {
+      "linux/amd64": {
+        "manifest_digest": "sha256:d5b107ba10c2d167b4937f10b37452dec98b1fcb3486e6b411dc3da9defe772b",
+        "binary_layer_digest": "sha256:7a4b3df8dcc64badab3b6c508e1231affdae45f4f339882263c3b13cf58b2817",
+        "binary_path": "/bin/junod",
+        "binary_sha256": "f782a5f984aa7880ea30e9d98aad71c99fa047aa894d06a16c1a81c658acdbb7"
+      },
+      "linux/arm64": {
+        "manifest_digest": "sha256:082bef409b1811690529ef365baa2d58434eb450b4d55ea9eaa7f7e777143539",
+        "binary_layer_digest": "sha256:f272d1591e1df19bba9b469768f1ef14a36fb9c8808b2fad08a7ee6d492e3270",
+        "binary_path": "/bin/junod",
+        "binary_sha256": "6db8320d0c338ed7adec72e3ca4fd654fd01f2bdbb665f4814b31c919f167b2d"
+      }
+    }
+  },
+  "expected_metadata": {
+    "commit": "c0b3a8d258d52d16e5bc39a75168a99aab9d098e",
+    "go": "1.25.2",
+    "cosmos_sdk": "v0.53.7",
+    "cometbft": "v0.38.23",
+    "wasmvm": "v3.0.4",
+    "build_tags": [
+      "netgo",
+      "muslc"
+    ],
+    "static": true
+  }
+}
