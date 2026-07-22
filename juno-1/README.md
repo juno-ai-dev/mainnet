@@ -16,7 +16,7 @@ Those that begin `2`, e.g. `2100_vx_x_x_UPGRADE.md` refer to the post-July 28 at
 
 Current upgrade preparation:
 
-- [`3100_v30_UPGRADE.md`](3100_v30_UPGRADE.md) — v30 mainnet operator runbook targeting block `40420000`, subject to on-chain approval.
+- [`3100_v30_UPGRADE.md`](3100_v30_UPGRADE.md) — v30 mainnet operator runbook targeting block `40420069`, subject to on-chain approval.
 
 ## Original launch docs
 
